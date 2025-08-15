@@ -60,7 +60,7 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/etkinlikler")
+      .get("https://backend-mg22.onrender.com/api/etkinlikler")
       .then((res) => {
         const etkinlikVerisi = res.data.etkinlikler || res.data;
 
