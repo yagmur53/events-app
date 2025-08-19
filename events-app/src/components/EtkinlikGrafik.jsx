@@ -37,7 +37,7 @@ export default function EtkinlikGrafik() {
   const grafikRef = useRef(null);
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/etkinlikler")
+      .get("https://backend-mg22.onrender.com/api/etkinlikler")
       .then((res) => setEventData(res.data))
       .catch((err) => console.error("Veri alınamadı:", err));
   }, []);
