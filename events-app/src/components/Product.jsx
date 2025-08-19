@@ -172,17 +172,6 @@ export default function Product({
 
   return (
     <article className="product">
-      {/* Silme butonu - sağ üst köşe */}
-      {onDelete && (
-        <button
-          className="delete-button"
-          onClick={(e) => onDelete(id, e)}
-          title="Etkinliği Sil"
-        >
-          <FaTimes />
-        </button>
-      )}
-
       <div className="product-content">
         <div id="cizgi">
           {/* Başlık */}

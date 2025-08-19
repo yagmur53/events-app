@@ -23,28 +23,6 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
   const [error, setError] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
 
-  const handleDelete = (etkinlikId, event) => {
-    event.stopPropagation(); // Modal açılmasını engeller
-
-    if (window.confirm("Bu etkinliği silmek istediğinizden emin misiniz?")) {
-      // Backend'e silme isteği gönder
-      axios
-        .delete(
-          `https://backend-mg22.onrender.com/api/etkinlikler/${etkinlikId}`
-        )
-        .then((response) => {
-          // Başarılı silme sonrası state'i güncelle
-          setEtkinlikler((prevEtkinlikler) =>
-            prevEtkinlikler.filter((etkinlik) => etkinlik.id !== etkinlikId)
-          );
-          console.log("Etkinlik başarıyla silindi:", response.data);
-        })
-        .catch((error) => {
-          console.error("Silme işlemi başarısız:", error);
-          alert("Silme işlemi başarısız oldu. Lütfen tekrar deneyin.");
-        });
-    }
-  };
   // Görünürlük kontrolü için state
   const [visibleFields, setVisibleFields] = useState([
     "ad",
@@ -302,7 +280,6 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
                 visibleFields={visibleFields}
                 customFieldMapping={customFieldMapping}
                 customFields={product.customFields}
-                onDelete={handleDelete}
               />
             </li>
           ))}
