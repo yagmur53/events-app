@@ -67,10 +67,10 @@ export default function EtkinlikGrafik() {
   }, [selectedLegend]);
 
   const getGroupedData = () => {
-    if (!selectedCategory || !eventData) return [];
+    if (!selectedCategory || !Array.isArray(eventData.etkinlikler)) return [];
 
     const grouped = {};
-    eventData.forEach((item) => {
+    eventData.etkinlikler.forEach((item) => {
       const field = item[selectedCategory.value];
       if (Array.isArray(field)) {
         field.forEach((val) => {
@@ -81,11 +81,10 @@ export default function EtkinlikGrafik() {
       }
     });
 
-    const sorted = Object.entries(grouped)
+    return Object.entries(grouped)
       .sort((a, b) => b[1] - a[1])
-      .map(([name, value]) => ({ name, value }));
-
-    return sorted.slice(0, 10);
+      .map(([name, value]) => ({ name, value }))
+      .slice(0, 10);
   };
 
   const groupedData = getGroupedData();
