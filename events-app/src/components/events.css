@@ -3,7 +3,56 @@
   width: 70%;
   margin: 2rem auto;
 }
+.product {
+  position: relative; /* Silme butonunun absolute positioning için gerekli */
+}
 
+.delete-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background-color: #ff4757;
+  color: white;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: all 0.3s ease;
+  z-index: 10;
+  opacity: 0.8;
+}
+
+.delete-button:hover {
+  background-color: #ff3742;
+  opacity: 1;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(255, 71, 87, 0.3);
+}
+
+.delete-button:active {
+  transform: scale(0.95);
+}
+
+/* Responsive design için */
+@media (max-width: 768px) {
+  .delete-button {
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+    top: 8px;
+    right: 8px;
+  }
+}
+
+/* Hover durumunda butonun daha görünür olması için */
+.product:hover .delete-button {
+  opacity: 1;
+}
 #products {
   list-style: none;
   margin: 0;

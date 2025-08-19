@@ -23,6 +23,29 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
   const [error, setError] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
 
+  const handleDelete = (etkinlikId, event) => {
+    event.stopPropagation(); // Modal açılmasını engeller
+
+    if (window.confirm("Bu etkinliği silmek istediğinizden emin misiniz?")) {
+      // Backend'e silme isteği gönder
+      axios
+        .delete(
+          `https://backend-mg22.onrender.com/api/etkinlikler/${etkinlikId}`
+        )
+        .then((response) => {
+          // Başarılı silme sonrası state'i güncelle
+          setEtkinlikler((prevEtkinlikler) =>
+            prevEtkinlikler.filter((etkinlik) => etkinlik.id !== etkinlikId)
+          );
+          console.log("Etkinlik başarıyla silindi:", response.data);
+        })
+        .catch((error) => {
+          console.error("Silme işlemi başarısız:", error);
+          alert("Silme işlemi başarısız oldu. Lütfen tekrar deneyin.");
+        });
+    }
+  };
+  // Görünürlük kontrolü için state
   const [visibleFields, setVisibleFields] = useState([
     "ad",
     "tema",
@@ -36,6 +59,7 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
 
   const grafikRef = useRef(null);
 
+  // Sabit alanlar
   const staticFields = {
     ad: "Toplantının / Faaliyetin Adı",
     ulusal: "Ulusal / Uluslararası",
@@ -61,8 +85,10 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
       .get("https://backend-mg22.onrender.com/api/etkinlikler")
       .then((res) => {
         const etkinlikVerisi = res.data.etkinlikler || res.data;
+
         setEtkinlikler(etkinlikVerisi);
 
+        // 🔥 CustomFields'ı dinamik olarak topla
         const dynamicCustomFields = {};
         etkinlikVerisi.forEach((etkinlik) => {
           if (etkinlik.customFields) {
@@ -87,10 +113,12 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
       });
   }, []);
 
+  // Tüm alanları birleştir (statik + custom)
   const allFields = useMemo(() => {
     return { ...staticFields, ...customFieldMapping };
   }, [customFieldMapping]);
 
+  // Select için options oluştur
   const fieldOptions = useMemo(() => {
     return Object.entries(allFields).map(([key, label]) => ({
       value: key,
@@ -99,6 +127,7 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
     }));
   }, [allFields]);
 
+  // Grouped options (react-select için)
   const groupedOptions = useMemo(() => {
     const grouped = fieldOptions.reduce((acc, option) => {
       const group = option.group;
@@ -168,39 +197,90 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
     });
   }, [filteredProducts]);
 
-  const openModal = (url) => setActiveModalUrl(url);
-  const closeModal = () => setActiveModalUrl(null);
+  const openModal = (url) => {
+    setActiveModalUrl(url);
+  };
+
+  const closeModal = () => {
+    setActiveModalUrl(null);
+  };
+
   const clearDates = () => {
     setStartDate(null);
     setEndDate(null);
   };
 
+  // Görünürlük seçimi değiştiğinde
   const handleVisibilityChange = (selectedOptions) => {
     setVisibleFields(
       selectedOptions ? selectedOptions.map((opt) => opt.value) : []
     );
   };
 
-  // 🔥 Yeni: Silme işlemi
-  const handleDelete = async (id) => {
-    if (!window.confirm("Bu etkinliği silmek istediğine emin misin?")) return;
-
-    try {
-      await axios.delete(
-        `https://backend-mg22.onrender.com/api/etkinlikler/${id}`
-      );
-      // frontend state güncelle
-      setEtkinlikler((prev) => prev.filter((item) => item.id !== id));
-    } catch (err) {
-      console.error("Silme hatası:", err);
-      alert("Etkinlik silinemedi!");
-    }
-  };
-
   return (
     <>
       <section id="event" ref={grafikRef}>
-        {/* Filtreler ... (aynı kalıyor) */}
+        <div className="filter-box">
+          <div className="top-controls">
+            <button
+              className="toggle-filter-button"
+              onClick={() => setShowFilters((prev) => !prev)}
+            >
+              {showFilters ? "Filtreyi Gizle" : "Filtrele"}
+            </button>
+
+            <div className="search-container">
+              <FaSearch className="search-icon" />
+              <input
+                id="search-input"
+                type="text"
+                placeholder="Arama yapınız..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {showFilters && (
+            <div className="date-filter-container">
+              <div id="date-filter-hiza">
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DateFilter
+                    dateName="Başlangıç"
+                    value={startDate}
+                    onChange={(newValue) => setStartDate(newValue)}
+                  />
+                  <DateFilter
+                    dateName="Bitiş"
+                    value={endDate}
+                    onChange={(newValue) => setEndDate(newValue)}
+                  />
+                </LocalizationProvider>
+                <button className="clear-dates-button" onClick={clearDates}>
+                  Temizle
+                </button>
+              </div>
+
+              {/* Alan Görünürlük Seçimi */}
+              <div className="visibility-filter-container">
+                <label>Gösterilecek Alanlar:</label>
+                <Select
+                  className="my-select"
+                  classNamePrefix="my-select"
+                  isMulti
+                  placeholder="Gösterilecek alanları seçiniz"
+                  options={groupedOptions}
+                  value={fieldOptions.filter((opt) =>
+                    visibleFields.includes(opt.value)
+                  )}
+                  onChange={handleVisibilityChange}
+                  isSearchable
+                  closeMenuOnSelect={false}
+                />
+              </div>
+            </div>
+          )}
+        </div>
 
         {error && <div className="error-message">{error}</div>}
 
@@ -216,22 +296,14 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
 
         <ul id="products">
           {displayedProducts.map((product) => (
-            <li key={product.id}>
-              <div onClick={() => openModal(product.url)} style={{ flex: 1 }}>
-                <Product
-                  {...product}
-                  visibleFields={visibleFields}
-                  customFieldMapping={customFieldMapping}
-                  customFields={product.customFields}
-                />
-              </div>
-              {/* 🔥 Sil butonu */}
-              <button
-                className="delete-btn"
-                onClick={() => handleDelete(product.id)}
-              >
-                Sil
-              </button>
+            <li key={product.id} onClick={() => openModal(product.url)}>
+              <Product
+                {...product}
+                visibleFields={visibleFields}
+                customFieldMapping={customFieldMapping}
+                customFields={product.customFields}
+                onDelete={handleDelete}
+              />
             </li>
           ))}
         </ul>

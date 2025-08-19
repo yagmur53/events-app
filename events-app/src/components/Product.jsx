@@ -5,6 +5,7 @@ import icon3 from "../assets/3.png";
 import icon4 from "../assets/4.png";
 import icon5 from "../assets/all.png";
 import icon6 from "../assets/5.png";
+import { FaTimes } from "react-icons/fa"; // Silme butonu için eklendi
 import "./events.css";
 
 export default function Product({
@@ -30,6 +31,7 @@ export default function Product({
   visibleFields = [],
   customFieldMapping = {},
   customFields,
+  onDelete, // Silme fonksiyonu için eklendi
   ...customProps // Custom fieldlar için
 }) {
   const kalkinmaGorselleri = {
@@ -170,6 +172,17 @@ export default function Product({
 
   return (
     <article className="product">
+      {/* Silme butonu - sağ üst köşe */}
+      {onDelete && (
+        <button
+          className="delete-button"
+          onClick={(e) => onDelete(id, e)}
+          title="Etkinliği Sil"
+        >
+          <FaTimes />
+        </button>
+      )}
+
       <div className="product-content">
         <div id="cizgi">
           {/* Başlık */}
