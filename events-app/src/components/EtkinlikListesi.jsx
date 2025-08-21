@@ -15,6 +15,7 @@ import ScrollToTop from "./scrollToTop.jsx";
 export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
   const [etkinlikler, setEtkinlikler] = useState([]);
   const [customFieldMapping, setCustomFieldMapping] = useState({});
+  const [excelFieldMapping, setExcelFieldMapping] = useState({}); // Excel'den gelen eşleşmeyen alanlar
   const [searchTerm, setSearchTerm] = useState("");
   const [activeModalUrl, setActiveModalUrl] = useState(null);
   const [startDate, setStartDate] = useState(null);
@@ -68,7 +69,10 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
 
         // 🔥 CustomFields'ı dinamik olarak topla
         const dynamicCustomFields = {};
+        const dynamicExcelFields = {}; // Excel'den gelen eşleşmeyen alanlar
+
         etkinlikVerisi.forEach((etkinlik) => {
+          // CustomFields'ı kontrol et (eski sistem)
           if (etkinlik.customFields) {
             Object.entries(etkinlik.customFields).forEach(([key, value]) => {
               if (typeof value === "object" && value.label) {
@@ -79,9 +83,24 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
               }
             });
           }
+
+          // Excel'den gelen eşleşmeyen alanları topla (yeni sistem)
+          Object.keys(etkinlik).forEach((key) => {
+            // Sabit alanlar, id, customFields ve extraData değilse
+            if (
+              !staticFields[key] &&
+              key !== "id" &&
+              key !== "customFields" &&
+              key !== "extraData"
+            ) {
+              // Excel başlığını aynen kullan
+              dynamicExcelFields[key] = key;
+            }
+          });
         });
 
         setCustomFieldMapping(dynamicCustomFields);
+        setExcelFieldMapping(dynamicExcelFields);
         setLoading(false);
       })
       .catch((err) => {
@@ -91,19 +110,29 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
       });
   }, []);
 
-  // Tüm alanları birleştir (statik + custom)
+  // Tüm alanları birleştir (statik + custom + excel)
   const allFields = useMemo(() => {
-    return { ...staticFields, ...customFieldMapping };
-  }, [customFieldMapping]);
+    return { ...staticFields, ...customFieldMapping, ...excelFieldMapping };
+  }, [customFieldMapping, excelFieldMapping]);
 
   // Select için options oluştur
   const fieldOptions = useMemo(() => {
-    return Object.entries(allFields).map(([key, label]) => ({
-      value: key,
-      label: `${label}`,
-      group: key.startsWith("custom_") ? "Özel Alanlar" : "Sabit Alanlar",
-    }));
-  }, [allFields]);
+    return Object.entries(allFields).map(([key, label]) => {
+      let group = "Sabit Alanlar";
+
+      if (customFieldMapping[key]) {
+        group = "Özel Alanlar";
+      } else if (excelFieldMapping[key]) {
+        group = "Excel Alanları";
+      }
+
+      return {
+        value: key,
+        label: `${label}`,
+        group: group,
+      };
+    });
+  }, [allFields, customFieldMapping, excelFieldMapping]);
 
   // Grouped options (react-select için)
   const groupedOptions = useMemo(() => {
@@ -278,7 +307,7 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
               <Product
                 {...product}
                 visibleFields={visibleFields}
-                customFieldMapping={customFieldMapping}
+                allFieldMapping={allFields}
                 customFields={product.customFields}
               />
             </li>

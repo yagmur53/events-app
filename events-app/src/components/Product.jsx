@@ -29,10 +29,10 @@ export default function Product({
   sektorIsbirligi,
   yarisma,
   visibleFields = [],
-  customFieldMapping = {},
+  allFieldMapping = {}, // Tüm alan eşleştirmelerini içerir
   customFields,
   onDelete, // Silme fonksiyonu için eklendi
-  ...customProps // Custom fieldlar için
+  ...customProps // Custom fieldlar ve Excel alanları için
 }) {
   const kalkinmaGorselleri = {
     "Yoksulluğa Son": "/yoksulluk.png",
@@ -62,29 +62,8 @@ export default function Product({
     faaliyetYurutucusu: icon4,
     ulusal: icon6,
     kalkinmaAraci: icon5,
-    // Custom alanlar için varsayılan icon
+    // Custom ve Excel alanları için varsayılan icon
     default: icon1,
-  };
-
-  // Alan label mapping
-  const fieldLabels = {
-    ad: "Etkinlik Adı",
-    tema: "Etkinlik Teması",
-    tur: "Faaliyet Türü",
-    duzenleyenBirim: "Düzenleyen Birim",
-    faaliyetYurutucusu: "Faaliyet Yürütücüsü",
-    ulusal: "Ulusal/Uluslararası",
-    baslama: "Etkinlik Tarihi",
-    kalkinmaAraci: "Sürdürülebilir Kalkınma Amaçları",
-    katilimci: "Yurt Dışından Katılımcı Sayısı",
-    katilimTur: "Katılım Türü",
-    kaliteKulturu: "Kalite Kültürünü Yaygınlaştırma",
-    faaliyetKulturu: "Faaliyet Kültürü",
-    kariyerMerkezi: "Kariyer Merkezi Faaliyeti",
-    bagimlilik: "Bağımlılıkla Mücadele",
-    dezavantajli: "Dezavantajlı Gruplara Yönelik",
-    sektorIsbirligi: "Sektör İş Birliği",
-    yarisma: "Etkinlik Yarışma İçeriyor Mu",
   };
 
   const kalkinmaListesi = Array.isArray(kalkinmaAraci)
@@ -96,7 +75,7 @@ export default function Product({
     ? new Date(baslama).toLocaleDateString("tr-TR")
     : "";
 
-  // Tüm props'ları birleştir (hem sabit hem custom)
+  // Tüm props'ları birleştir (hem sabit hem custom hem excel alanları)
   const allProps = {
     id,
     ad,
@@ -157,13 +136,11 @@ export default function Product({
 
   // Alanın label'ını al
   const getFieldLabel = (field) => {
-    if (fieldLabels[field]) {
-      return fieldLabels[field];
+    // allFieldMapping'den label'ı al
+    if (allFieldMapping[field]) {
+      return allFieldMapping[field];
     }
-    // Custom field ise mapping'den al
-    if (customFieldMapping[field]) {
-      return customFieldMapping[field];
-    }
+
     // Fallback olarak field adını formatla
     return field
       .replace(/([A-Z])/g, " $1")
@@ -221,7 +198,7 @@ export default function Product({
               );
             }
 
-            // Normal alanlar
+            // Normal alanlar - başlık ve içerik şeklinde göster
             return (
               <div key={field} className="siralama">
                 <img className="resim" src={icon} alt="" />
