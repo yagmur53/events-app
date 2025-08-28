@@ -91,7 +91,8 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
               !staticFields[key] &&
               key !== "id" &&
               key !== "customFields" &&
-              key !== "extraData"
+              key !== "extraData" &&
+              key !== "batchId"
             ) {
               // Excel başlığını aynen kullan
               dynamicExcelFields[key] = key;
