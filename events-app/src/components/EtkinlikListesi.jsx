@@ -9,13 +9,14 @@ import DateFilter from "./DateFilter.jsx";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+import Pagination from "./Pagination.jsx";
 import "./product-select.css";
 import ScrollToTop from "./scrollToTop.jsx";
 
 export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
   const [etkinlikler, setEtkinlikler] = useState([]);
   const [customFieldMapping, setCustomFieldMapping] = useState({});
-  const [excelFieldMapping, setExcelFieldMapping] = useState({}); // Excel'den gelen eşleşmeyen alanlar
+  const [excelFieldMapping, setExcelFieldMapping] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const [activeModalUrl, setActiveModalUrl] = useState(null);
   const [startDate, setStartDate] = useState(null);
@@ -24,7 +25,9 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
   const [error, setError] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Görünürlük kontrolü için state
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 15;
+
   const [visibleFields, setVisibleFields] = useState([
     "ad",
     "tema",
@@ -38,7 +41,6 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
 
   const grafikRef = useRef(null);
 
-  // Sabit alanlar
   const staticFields = {
     ad: "Toplantının / Faaliyetin Adı",
     ulusal: "Ulusal / Uluslararası",
@@ -67,12 +69,10 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
 
         setEtkinlikler(etkinlikVerisi);
 
-        // 🔥 CustomFields'ı dinamik olarak topla
         const dynamicCustomFields = {};
-        const dynamicExcelFields = {}; // Excel'den gelen eşleşmeyen alanlar
+        const dynamicExcelFields = {};
 
         etkinlikVerisi.forEach((etkinlik) => {
-          // CustomFields'ı kontrol et (eski sistem)
           if (etkinlik.customFields) {
             Object.entries(etkinlik.customFields).forEach(([key, value]) => {
               if (typeof value === "object" && value.label) {
@@ -84,17 +84,15 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
             });
           }
 
-          // Excel'den gelen eşleşmeyen alanları topla (yeni sistem)
           Object.keys(etkinlik).forEach((key) => {
-            // Sabit alanlar, id, customFields ve extraData değilse
             if (
               !staticFields[key] &&
               key !== "id" &&
               key !== "customFields" &&
               key !== "extraData" &&
-              key !== "batchId"
+              key !== "batchId" &&
+              key !== "uploadDate"
             ) {
-              // Excel başlığını aynen kullan
               dynamicExcelFields[key] = key;
             }
           });
@@ -111,12 +109,10 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
       });
   }, []);
 
-  // Tüm alanları birleştir (statik + custom + excel)
   const allFields = useMemo(() => {
     return { ...staticFields, ...customFieldMapping, ...excelFieldMapping };
   }, [customFieldMapping, excelFieldMapping]);
 
-  // Select için options oluştur
   const fieldOptions = useMemo(() => {
     return Object.entries(allFields).map(([key, label]) => {
       let group = "Sabit Alanlar";
@@ -135,7 +131,6 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
     });
   }, [allFields, customFieldMapping, excelFieldMapping]);
 
-  // Grouped options (react-select için)
   const groupedOptions = useMemo(() => {
     const grouped = fieldOptions.reduce((acc, option) => {
       const group = option.group;
@@ -218,7 +213,18 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
     setEndDate(null);
   };
 
-  // Görünürlük seçimi değiştiğinde
+  const offset = currentPage * itemsPerPage;
+  const currentProducts = displayedProducts.slice(
+    offset,
+    offset + itemsPerPage
+  );
+  const pageCount = Math.ceil(displayedProducts.length / itemsPerPage);
+
+  const handlePageClick = ({ selected }) => {
+    setCurrentPage(selected);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleVisibilityChange = (selectedOptions) => {
     setVisibleFields(
       selectedOptions ? selectedOptions.map((opt) => opt.value) : []
@@ -269,7 +275,6 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
                 </button>
               </div>
 
-              {/* Alan Görünürlük Seçimi */}
               <div className="visibility-filter-container">
                 <label>Gösterilecek Alanlar:</label>
                 <Select
@@ -303,7 +308,7 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
         )}
 
         <ul id="products">
-          {displayedProducts.map((product) => (
+          {currentProducts.map((product) => (
             <li key={product.id} onClick={() => openModal(product.url)}>
               <Product
                 {...product}
@@ -314,6 +319,9 @@ export default function EtkinlikListesi({ selectedCategory, selectedLegend }) {
             </li>
           ))}
         </ul>
+        {pageCount > 1 && (
+          <Pagination pageCount={pageCount} onPageChange={handlePageClick} />
+        )}
 
         {activeModalUrl && <Modal url={activeModalUrl} onClose={closeModal} />}
       </section>
